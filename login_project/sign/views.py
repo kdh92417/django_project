@@ -5,6 +5,8 @@ from django.shortcuts import (
 
 from django.http      import HttpResponse
 
+from django.contrib.auth import logout as auth_logout
+
 from .models          import Account
 from django.views     import View
 
@@ -50,15 +52,24 @@ class SigninView(View):
             res_data['error'] = '모든 값을 입력하세요'
 
         else:
-            user = Account.objects.get(user_name = user_name)
-            if user.password == password:
-                request.session['user'] = user.id
+            try:
+                user = Account.objects.get(user_name = user_name)
+                if user.password == password:
+                    request.session['user'] = user.id
 
-                return redirect('/')
-            else:
-                res_data['error'] = '비밀번호가 다릅니다.'
-
+                    return redirect('/')
+                else:
+                    res_data['error'] = '비밀번호가 다릅니다.'
+            except Account.DoesNotExist:
+                res_data['error'] = '존재하지 않는 아이디 입니다.'
         return render(request, 'sign/signin.html', res_data)
+
+
+def logout(request):
+    if request.session.get('user'):
+        auth_logout(request)
+
+    return redirect('/')
 
 def home(request):
     user_id = request.session.get('user')
